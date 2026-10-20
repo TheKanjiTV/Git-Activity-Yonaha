@@ -4,6 +4,7 @@ import Button from './components/ui/Button';
 import Form from './components/ui/Form';
 import Counter from './components/ui/Counter';
 import List from './components/ui/List';
+import Post from './components/ui/Post';
 
 function App() {
     return (
@@ -28,6 +29,8 @@ function App() {
             <Counter />
 
             <List />
+            
+            <Post />
         </div>
     );
 }
