@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getPost, storePost } from '../../api/post';
 import './styles/post.css';
@@ -7,30 +8,55 @@ export default function Post() {
   const [posts, setPosts] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  // 1. Fetch posts on load
+  // Fetch posts on load
   useEffect(() => {
+    let active = true;
+
     const fetchPosts = async () => {
       try {
         const response = await getPost();
-        setPosts(response.data.data || response.data);
+        const data = response.data?.data ?? response.data;
+
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected posts response format.');
+        }
+
+        if (active) {
+          setPosts(data);
+          setFetchError('');
+        }
       } catch (err) {
-        console.error("Failed to load posts", err);
+        console.error('Failed to load posts:', err);
+
+        if (active) {
+          setFetchError('Failed to load posts. Please try again.');
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchPosts();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // 2. Clear error while typing
+  // Clear validation error while typing
   useEffect(() => {
     if (message.trim() && error === 'Post cannot be empty') {
       setError('');
     }
   }, [message, error]);
 
-  // 3. Submit function
+  // Submit a new post
   const submit = async (e) => {
     e.preventDefault();
 
@@ -43,13 +69,30 @@ export default function Post() {
     setError('');
 
     try {
-      const response = await storePost({ message });
-      const newPost = response.data.data || response.data;
-      
-      setPosts((prevPosts) => [newPost, ...prevPosts]);
+      const response = await storePost({
+        message: message.trim(),
+      });
+
+      const newPost = response.data?.data ?? response.data;
+
+      if (!newPost || newPost.id == null) {
+        throw new Error('The server returned an invalid post.');
+      }
+
+      setPosts((prevPosts) => [
+        newPost,
+        ...prevPosts.filter((post) => post.id !== newPost.id),
+      ]);
+
       setMessage('');
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Failed to share post. Please try again.';
+      console.error('Failed to create post:', err);
+
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to share post. Please try again.';
+
       setError(errMsg);
     } finally {
       setProcessing(false);
@@ -66,10 +109,12 @@ export default function Post() {
             className="post-textarea"
             onChange={(e) => setMessage(e.target.value)}
             disabled={processing}
+            aria-label="Write a post"
+            aria-invalid={Boolean(error)}
           />
 
           {error && (
-            <div className="post-error">
+            <div className="post-error" role="alert">
               {error}
             </div>
           )}
@@ -86,16 +131,25 @@ export default function Post() {
         </form>
       </div>
 
+      {fetchError && (
+        <div className="post-error" role="alert">
+          {fetchError}
+        </div>
+      )}
+
       <div className="post-feed-list">
-        {posts.length > 0 ? (
+        {loading ? (
+          <p>Loading posts...</p>
+        ) : posts.length > 0 ? (
           posts.map((post) => (
-            <PostCard key={post.id || Math.random()} post={post} />
+            <PostCard key={post.id} post={post} />
           ))
-        ) : (
-          <div className="post-empty-state">No posts shared yet.</div>
-        )}
+        ) : !fetchError ? (
+          <div className="post-empty-state">
+            No posts shared yet.
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
-
