@@ -1,0 +1,23 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/build": true,
+    "**/storage/logs": true,
+    "**/.cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/build": true,
+    "**/storage/logs": true,
+    "**/.cache": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/vendor/**": true,
+    "**/build/**": true,
+    "**/storage/logs/**": true,
+    "**/.cache/**": true
+  }
+}
