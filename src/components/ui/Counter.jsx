@@ -20,3 +20,5 @@ function Counter() {
 }
 
 export default Counter;
+
+// New Line for counter
