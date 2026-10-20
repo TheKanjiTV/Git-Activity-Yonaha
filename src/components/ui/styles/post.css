@@ -12,6 +12,42 @@
  gap: 1rem;
 }
 
+.post-card,
+.post-feed-card {
+ background: #fff;
+ border: 1px solid #dcdfe4;
+ border-radius: 0.5rem;
+ padding: 1rem;
+}
+
+.post-feed-list {
+ display: grid;
+ gap: 0.75rem;
+ margin-top: 1rem;
+}
+
+.post-feed-message {
+ margin: 0 0 0.75rem;
+ white-space: pre-wrap;
+ overflow-wrap: anywhere;
+}
+
+.post-feed-time {
+ color: #6b7280;
+ font-size: 0.8rem;
+}
+
+.post-empty-state {
+ color: #6b7280;
+ padding: 1rem 0;
+ text-align: center;
+}
+
+.post-footer {
+ display: flex;
+ justify-content: flex-end;
+}
+
 .post-textarea {
  display: block;
  width: 100%;
@@ -50,7 +86,7 @@
 }
 
 .post-submit-btn {
- align-self: flex-start;
+ align-self: flex-end;
  background-color: #1e2533;
  color: #ffffff;
  padding: 0.65rem 1.25rem;

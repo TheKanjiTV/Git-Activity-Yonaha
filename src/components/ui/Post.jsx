@@ -1,52 +1,38 @@
 
 import React, { useState, useEffect } from 'react';
-import { getPost, storePost } from '../../api/post';
 import './styles/post.css';
-import PostCard from './PostCard';
+
+const POSTS_STORAGE_KEY = 'laravel-f1-posts';
+
+function PostCard({ post }) {
+  return (
+    <article className="post-feed-card">
+      <p className="post-feed-message">{post.message}</p>
+      <time className="post-feed-time" dateTime={post.createdAt}>
+        {new Date(post.createdAt).toLocaleString()}
+      </time>
+    </article>
+  );
+}
 
 export default function Post() {
   const [posts, setPosts] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [fetchError, setFetchError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  // Fetch posts on load
+  // Keep this standalone UI working without a posts API in the project.
   useEffect(() => {
-    let active = true;
-
-    const fetchPosts = async () => {
-      try {
-        const response = await getPost();
-        const data = response.data?.data ?? response.data;
-
-        if (!Array.isArray(data)) {
-          throw new Error('Unexpected posts response format.');
-        }
-
-        if (active) {
-          setPosts(data);
-          setFetchError('');
-        }
-      } catch (err) {
-        console.error('Failed to load posts:', err);
-
-        if (active) {
-          setFetchError('Failed to load posts. Please try again.');
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+    try {
+      const savedPosts = window.localStorage.getItem(POSTS_STORAGE_KEY);
+      if (savedPosts) {
+        const parsedPosts = JSON.parse(savedPosts);
+        if (Array.isArray(parsedPosts)) setPosts(parsedPosts);
       }
-    };
-
-    fetchPosts();
-
-    return () => {
-      active = false;
-    };
+    } catch (storageError) {
+      setFetchError('Saved posts could not be read in this browser.');
+    }
   }, []);
 
   // Clear validation error while typing
@@ -69,31 +55,17 @@ export default function Post() {
     setError('');
 
     try {
-      const response = await storePost({
+      const newPost = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message: message.trim(),
-      });
-
-      const newPost = response.data?.data ?? response.data;
-
-      if (!newPost || newPost.id == null) {
-        throw new Error('The server returned an invalid post.');
-      }
-
-      setPosts((prevPosts) => [
-        newPost,
-        ...prevPosts.filter((post) => post.id !== newPost.id),
-      ]);
-
+        createdAt: new Date().toISOString(),
+      };
+      const updatedPosts = [newPost, ...posts];
+      window.localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(updatedPosts));
+      setPosts(updatedPosts);
       setMessage('');
-    } catch (err) {
-      console.error('Failed to create post:', err);
-
-      const errMsg =
-        err.response?.data?.message ||
-        err.message ||
-        'Failed to share post. Please try again.';
-
-      setError(errMsg);
+    } catch (storageError) {
+      setError('Could not save this post in your browser.');
     } finally {
       setProcessing(false);
     }
@@ -138,9 +110,7 @@ export default function Post() {
       )}
 
       <div className="post-feed-list">
-        {loading ? (
-          <p>Loading posts...</p>
-        ) : posts.length > 0 ? (
+        {posts.length > 0 ? (
           posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))
