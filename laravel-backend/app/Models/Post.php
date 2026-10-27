@@ -20,10 +20,6 @@ class Post extends Model
         'user_id',
     ];
 
-    protected $appends = [
-        'message',
-    ];
-
     protected function message(): Attribute
     {
         return Attribute::get(
