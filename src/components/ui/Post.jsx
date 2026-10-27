@@ -59,7 +59,13 @@ export default function Post() {
       setMessage('');
     } catch (err) {
       const validationMessage = err.response?.data?.errors?.message?.[0];
-      const errMsg = validationMessage || err.response?.data?.message || 'Failed to share post. Please try again.';
+      const errMsg = validationMessage
+        || (err.response?.status >= 500
+          ? 'The server could not save your post. Check the Laravel database migration and try again.'
+          : err.response?.data?.message)
+        || (err.code === 'ECONNABORTED'
+          ? 'The server took too long to respond. Please try again.'
+          : 'Failed to share post. Please try again.');
       setError(errMsg);
     } finally {
       setProcessing(false);
