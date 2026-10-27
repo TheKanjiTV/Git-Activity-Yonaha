@@ -1,28 +1,25 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePostRequest;
+use App\Models\Post;
+use Illuminate\Http\JsonResponse;
+
 class PostController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        return response()->json(Post::all());
+        return response()->json(Post::latest()->get());
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StorePostRequest $request)
+    public function store(StorePostRequest $request): JsonResponse
     {
         $post = Post::create($request->validated());
 
         return response()->json([
             'message' => 'Post created successfully',
-            'data' => $post
+            'data' => $post,
         ], 201);
     }
 }
