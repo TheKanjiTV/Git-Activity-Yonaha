@@ -8,15 +8,20 @@ export default function Post() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 1. Fetch posts on load
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         const response = await getPost();
-        setPosts(response.data.data || response.data);
+        const responsePosts = response.data?.data ?? response.data;
+        setPosts(Array.isArray(responsePosts) ? responsePosts : []);
       } catch (err) {
         console.error("Failed to load posts", err);
+        setError('Could not load posts. Check the Laravel server and try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -25,7 +30,7 @@ export default function Post() {
 
   // 2. Clear error while typing
   useEffect(() => {
-    if (message.trim() && error === 'Post cannot be empty') {
+    if (message.trim() && error) {
       setError('');
     }
   }, [message, error]);
@@ -43,13 +48,18 @@ export default function Post() {
     setError('');
 
     try {
-      const response = await storePost({ message });
-      const newPost = response.data.data || response.data;
-      
+      const response = await storePost({ message: message.trim() });
+      const newPost = response.data?.data ?? response.data;
+
+      if (!newPost || typeof newPost.id === 'undefined') {
+        throw new Error('The server returned an invalid post.');
+      }
+
       setPosts((prevPosts) => [newPost, ...prevPosts]);
       setMessage('');
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Failed to share post. Please try again.';
+      const validationMessage = err.response?.data?.errors?.message?.[0];
+      const errMsg = validationMessage || err.response?.data?.message || 'Failed to share post. Please try again.';
       setError(errMsg);
     } finally {
       setProcessing(false);
@@ -61,6 +71,7 @@ export default function Post() {
       <div className="post-card">
         <form onSubmit={submit} className="post-form">
           <textarea
+            aria-label="Post message"
             value={message}
             placeholder="What is happening?!"
             className="post-textarea"
@@ -87,15 +98,16 @@ export default function Post() {
       </div>
 
       {/* Post feed list na may ternary operator para sa empty state */}
-      <div className="post-feed-list">
+      {loading && <p role="status" className="post-status">Loading posts...</p>}
+      {!loading && <div className="post-feed-list" aria-live="polite">
         {posts.length > 0 ? (
           posts.map((post) => (
-            <PostCard key={post.id || Math.random()} post={post} />
+            <PostCard key={post.id ?? `${post.created_at}-${post.message}`} post={post} />
           ))
         ) : (
           <div className="post-empty-state">No posts shared yet.</div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

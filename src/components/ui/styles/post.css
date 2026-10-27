@@ -1,6 +1,6 @@
 .post-container {
- max-width: 600px; 
- margin: 40px auto; 
+ max-width: 660px;
+ margin: 0 auto 40px;
  padding: 0 16px;
 }
 
@@ -17,13 +17,19 @@
  background: #fff;
  border: 1px solid #dcdfe4;
  border-radius: 0.5rem;
- padding: 1rem;
+ padding: 1.25rem;
 }
 
 .post-feed-list {
  display: grid;
  gap: 0.75rem;
  margin-top: 1rem;
+}
+
+.post-status {
+ color: #6b7280;
+ text-align: center;
+ padding: 1rem;
 }
 
 .post-feed-message {
@@ -108,6 +114,3 @@
  opacity: 0.6;
  cursor: not-allowed;
 }
-
-
- /* New Line for post.css */
