@@ -1,48 +1,36 @@
-
 import React, { useState, useEffect } from 'react';
+import { getPost, storePost } from '../../api/post';
 import './styles/post.css';
-
-const POSTS_STORAGE_KEY = 'laravel-f1-posts';
-
-function PostCard({ post }) {
-  return (
-    <article className="post-feed-card">
-      <p className="post-feed-message">{post.message}</p>
-      <time className="post-feed-time" dateTime={post.createdAt}>
-        {new Date(post.createdAt).toLocaleString()}
-      </time>
-    </article>
-  );
-}
+import PostCard from './PostCard';
 
 export default function Post() {
   const [posts, setPosts] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [fetchError, setFetchError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  // Keep this standalone UI working without a posts API in the project.
+  // 1. Fetch posts on load
   useEffect(() => {
-    try {
-      const savedPosts = window.localStorage.getItem(POSTS_STORAGE_KEY);
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts);
-        if (Array.isArray(parsedPosts)) setPosts(parsedPosts);
+    const fetchPosts = async () => {
+      try {
+        const response = await getPost();
+        setPosts(response.data.data || response.data);
+      } catch (err) {
+        console.error("Failed to load posts", err);
       }
-    } catch (storageError) {
-      setFetchError('Saved posts could not be read in this browser.');
-    }
+    };
+
+    fetchPosts();
   }, []);
 
-  // Clear validation error while typing
+  // 2. Clear error while typing
   useEffect(() => {
     if (message.trim() && error === 'Post cannot be empty') {
       setError('');
     }
   }, [message, error]);
 
-  // Submit a new post
+  // 3. Submit function
   const submit = async (e) => {
     e.preventDefault();
 
@@ -55,17 +43,14 @@ export default function Post() {
     setError('');
 
     try {
-      const newPost = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        message: message.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      const updatedPosts = [newPost, ...posts];
-      window.localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(updatedPosts));
-      setPosts(updatedPosts);
+      const response = await storePost({ message });
+      const newPost = response.data.data || response.data;
+      
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
       setMessage('');
-    } catch (storageError) {
-      setError('Could not save this post in your browser.');
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'Failed to share post. Please try again.';
+      setError(errMsg);
     } finally {
       setProcessing(false);
     }
@@ -81,12 +66,10 @@ export default function Post() {
             className="post-textarea"
             onChange={(e) => setMessage(e.target.value)}
             disabled={processing}
-            aria-label="Write a post"
-            aria-invalid={Boolean(error)}
           />
 
           {error && (
-            <div className="post-error" role="alert">
+            <div className="post-error">
               {error}
             </div>
           )}
@@ -103,22 +86,15 @@ export default function Post() {
         </form>
       </div>
 
-      {fetchError && (
-        <div className="post-error" role="alert">
-          {fetchError}
-        </div>
-      )}
-
+      {/* Post feed list na may ternary operator para sa empty state */}
       <div className="post-feed-list">
         {posts.length > 0 ? (
           posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id || Math.random()} post={post} />
           ))
-        ) : !fetchError ? (
-          <div className="post-empty-state">
-            No posts shared yet.
-          </div>
-        ) : null}
+        ) : (
+          <div className="post-empty-state">No posts shared yet.</div>
+        )}
       </div>
     </div>
   );
