@@ -15,3 +15,9 @@ Route::apiResource('products', ProductController::class)->names('legacy.products
 Route::post('/payroll', [HumanResourceController::class, 'payroll']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
+
+Route::apiResource('/posts', PostController::class);
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
